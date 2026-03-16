@@ -62,11 +62,11 @@ EXTRA_SKIP_ARGS=(
     "--skiptest" "/trick global protection"
     "--skiptest" "/trick readonly table"
     "--skiptest" "/Globals protection"
+    "--skiptest" "/Test scripting debug"
     "--skiptest" "/cmsgpack can pack and unpack circular references"
     "--skiptest" "lua bit.tohex bug"
     "--skiptest" "EVAL - JSON string encoding a string larger than 2GB"
     "--skiptest" "/Active Defrag eval scripts"
-    "--tags" "-needs:debug"
 )
 
 cd "$VALKEY_DIR"
