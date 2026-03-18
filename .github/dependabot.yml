@@ -6,7 +6,5 @@ updates:
       interval: daily
   - package-ecosystem: gitsubmodule
     directory: /
-    allow:
-      - dependency-name: deps/luajit
     schedule:
       interval: daily
