@@ -35,6 +35,12 @@ start_server {tags {"scripting-isolation"}} {
         assert_equal [$u2 EVAL "return foo" 0] {different}
     }
 
+    test {user1 can create script with script load and user2 can call it with evalsha} {
+        set sha [$u1 SCRIPT LOAD {return 'hello from user1'}]
+
+        assert_equal [$u2 EVALSHA $sha 0] {hello from user1}
+    }
+
     $u1 close
     $u2 close
     r ACL DELUSER user1 user2
