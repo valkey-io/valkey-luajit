@@ -41,7 +41,17 @@ start_server {tags {"scripting-isolation"}} {
         assert_equal [$u2 EVALSHA $sha 0] {hello from user1}
     }
 
+    test {New user is able to call that script too} {
+        r ACL SETUSER user3 on >pass3 +@scripting ~*
+        set u3 [valkey [srv "host"] [srv "port"] 0 $::tls]
+        $u3 AUTH user3 pass3
+
+        assert_equal [$u3 EVALSHA $sha 0] {hello from user1}
+
+        $u3 close
+    }
+
     $u1 close
     $u2 close
-    r ACL DELUSER user1 user2
+    r ACL DELUSER user1 user2 user3
 }
