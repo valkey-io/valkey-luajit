@@ -40,8 +40,7 @@ start_server {tags {"scripting-ffi"} overrides {luajit.enable-ffi-api yes}} {
         r set "key1" "value1"
         r set "key2" "value2"
         r eval "
-            local ctx = VKM.ctx()
-            local key = VKM.random_key(ctx)
+            local key = VKM.random_key()
             return type(key)
         " 0
     } {string}
@@ -49,8 +48,7 @@ start_server {tags {"scripting-ffi"} overrides {luajit.enable-ffi-api yes}} {
 
     test {FFI - random_key returns nil for empty DB} {
         r eval "
-            local ctx = VKM.ctx()
-            local key = VKM.random_key(ctx)
+            local key = VKM.random_key()
             if key == nil then
                 return 'nil'
             else
@@ -62,8 +60,7 @@ start_server {tags {"scripting-ffi"} overrides {luajit.enable-ffi-api yes}} {
     test {FFI - random_key returns valid key from DB} {
         r set "testkey" "testvalue"
         r eval "
-            local ctx = VKM.ctx()
-            local key = VKM.random_key(ctx)
+            local key = VKM.random_key()
             return key
         " 0
     } {testkey}

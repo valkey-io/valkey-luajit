@@ -271,7 +271,9 @@ function VKM.db_size(ctx)
     return tonumber(C.ValkeyModule_DbSize(ctx))
 end
 
-function VKM.random_key(ctx)
+function VKM.random_key()
+    local ctx = VKM.ctx()
+    if ctx == nil then return VKM.ERR end
     local rms = C.ValkeyModule_RandomKey(ctx)
     if rms == nil then
         return nil
