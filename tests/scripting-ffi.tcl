@@ -7,8 +7,9 @@ start_server {tags {"scripting-ffi"}} {
         r eval "local VKM = VKM; if VKM == nil then return 'not accessible' end" 0
     } {not accessible}
 
-    test {FFI - Runtime config set does not enable FFI} {
-        r config set luajit.enable-ffi-api yes
+    test {FFI - Runtime config set fails (immutable)} {
+        catch {r config set luajit.enable-ffi-api yes} e
+        assert_match {*can't set immutable config*} $e
 
         r eval "local ffi = ffi; if ffi == nil then return 'not accessible' end" 0
     } {not accessible}

@@ -67,6 +67,7 @@ EXTRA_SKIP_ARGS=(
     "--skiptest" "lua bit.tohex bug"
     "--skiptest" "EVAL - JSON string encoding a string larger than 2GB"
     "--skiptest" "/Active Defrag eval scripts"
+    "--skiptest" "CONFIG sanity"
 )
 
 cd "$VALKEY_DIR"

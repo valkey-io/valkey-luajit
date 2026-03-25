@@ -862,13 +862,6 @@ static int ffiSetConfig(const char *name, int val, void *privdata, ValkeyModuleS
     return VALKEYMODULE_OK;
 }
 
-static int ffiApplyConfig(ValkeyModuleCtx *ctx, void *privdata, ValkeyModuleString **err) {
-    VALKEYMODULE_NOT_USED(ctx);
-    VALKEYMODULE_NOT_USED(privdata);
-    VALKEYMODULE_NOT_USED(err);
-    return VALKEYMODULE_OK;
-}
-
 static luajitEngineCtx *engine_ctx = NULL;
 
 int ValkeyModule_OnLoad(ValkeyModuleCtx *ctx,
@@ -887,10 +880,10 @@ int ValkeyModule_OnLoad(ValkeyModuleCtx *ctx,
     if (ValkeyModule_RegisterBoolConfig(ctx,
                                         "enable-ffi-api",
                                         0,
-                                        VALKEYMODULE_CONFIG_DEFAULT,
+                                        VALKEYMODULE_CONFIG_IMMUTABLE,
                                         ffiGetConfig,
                                         ffiSetConfig,
-                                        ffiApplyConfig,
+                                        NULL,
                                         NULL) == VALKEYMODULE_ERR) {
         ValkeyModule_Log(ctx, "warning", "Failed to register enable-ffi-api config");
         return VALKEYMODULE_ERR;
