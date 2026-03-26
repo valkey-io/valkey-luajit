@@ -2,7 +2,7 @@ proc get_function_code {engine library_name function_name body} {
     return [format "#!%s name=%s\nserver.register_function('%s', function(KEYS, ARGV)\n %s \nend)" $engine $library_name $function_name $body]
 }
 
-start_server {tags {"engine-coexistence"} overrides {luajit.enable-ffi-api yes}} {
+start_server {tags {"engine-coexistence"} overrides {luajit.enable-ffi-api yes luajit.engine-name "luajit"}} {
     test {EVAL uses built-in Lua engine} {
         set result [r EVAL "return _VERSION" 0]
         assert_match {*Lua 5.*} $result

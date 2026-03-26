@@ -2,7 +2,7 @@ proc get_function_code {engine library_name function_name body} {
     return [format "#!%s name=%s\nserver.register_function('%s', function(KEYS, ARGV)\n %s \nend)" $engine $library_name $function_name $body]
 }
 
-start_server {tags {"function-coexistence"}} {
+start_server {tags {"function-coexistence"} overrides {luajit.engine-name "luajit"}} {
     test {Both engines can be used simultaneously} {
         r FUNCTION LOAD [get_function_code lua simlib1 from_lua {return 'from-Lua'}]
         r FUNCTION LOAD [get_function_code luajit simlib2 from_luajit {return 'from-LuaJIT'}]

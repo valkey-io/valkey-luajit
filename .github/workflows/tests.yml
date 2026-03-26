@@ -8,8 +8,8 @@ on:
     branches: [ master ]
 
 jobs:
-  replacement-tests:
-    name: Tests - LuaJIT as replacement
+  tests:
+    name: tests
     runs-on: ubuntu-24.04
     steps:
       - name: Check out code
@@ -24,24 +24,5 @@ jobs:
       - name: Build
         run: ./build.sh --with-tests
 
-      - name: Run replacement tests
-        run: ./tests/replacement/run-replacement-tests.sh --skiptest "Process title set as expected" --verbose --dump-logs
-
-  coexistence-tests:
-    name: Tests - LuaJIT coexistence
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v6
-
-      - name: Update submodule
-        run: git submodule update --init --recursive
-
-      - name: Get deps
-        run: sudo apt-get install pkg-config tcl8.6 tclx cmake libssl-dev
-
-      - name: Build
-        run: ./build.sh --with-tests
-
-      - name: Run coexistence tests
-        run: ./tests/coexistence/run-coexistence-tests.sh --skiptest "Process title set as expected" --verbose --dump-logs
+      - name: Run tests
+        run: ./tests/run-valkey-tests.sh --skiptest "Process title set as expected" --verbose --dump-logs

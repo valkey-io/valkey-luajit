@@ -1,7 +1,4 @@
-# Tests for EVAL / EVALSHA / SCRIPT LOAD shebang routing in coexistence mode.
-
-start_server {tags {"eval-coexistence"} overrides {luajit.enable-ffi-api yes}} {
-
+start_server {tags {"eval-coexistence"} overrides {luajit.enable-ffi-api yes luajit.engine-name "luajit"}} {
     test {No-shebang EVAL routes to built-in Lua} {
         catch {r eval "return jit.version" 0} err
         assert_match {*nonexistent global variable*} $err
