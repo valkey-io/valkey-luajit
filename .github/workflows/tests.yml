@@ -25,7 +25,7 @@ jobs:
         run: ./build.sh --with-tests
 
       - name: Run replacement tests
-        run: ./tests/replacement/run-replacement-tests.sh --skiptest "Process title set as expected"
+        run: ./tests/replacement/run-replacement-tests.sh --skiptest "Process title set as expected" --verbose --dump-logs
 
   coexistence-tests:
     name: Tests - LuaJIT coexistence
@@ -44,4 +44,4 @@ jobs:
         run: ./build.sh --with-tests
 
       - name: Run coexistence tests
-        run: ./tests/coexistence/run-coexistence-tests.sh --skiptest "Process title set as expected"
+        run: ./tests/coexistence/run-coexistence-tests.sh --skiptest "Process title set as expected" --verbose --dump-logs
