@@ -38,9 +38,11 @@ extern int luaopen_jit(lua_State *L);
 
 #define DEFAULT_ENGINE_NAME "LUA"
 #define REGISTRY_FUNC_CACHE_NAME "__func_cache"
+#define MAX_ENGINE_NAMES 4
 
-static ValkeyModuleString *engine_name_str = NULL;
-static const char *engine_name_cstr = NULL;
+static ValkeyModuleString *engine_names[MAX_ENGINE_NAMES] = {NULL};
+static const char *engine_names_cstr[MAX_ENGINE_NAMES] = {NULL};
+static int engine_names_count = 0;
 
 static int luajitFFIGetCurrentContext(lua_State *lua) {
     lua_getfield(lua, LUA_REGISTRYINDEX, "__ffi_ctx");
@@ -868,17 +870,46 @@ static int ffiSetConfig(const char *name, int val, void *privdata, ValkeyModuleS
 static ValkeyModuleString *engineNameGet(const char *name, void *privdata) {
     VALKEYMODULE_NOT_USED(name);
     VALKEYMODULE_NOT_USED(privdata);
-    return engine_name_str;
+    return engine_names[0];
 }
 
 static int engineNameSet(const char *name, ValkeyModuleString *val, void *privdata, ValkeyModuleString **err) {
     VALKEYMODULE_NOT_USED(name);
     VALKEYMODULE_NOT_USED(privdata);
     VALKEYMODULE_NOT_USED(err);
-    if (engine_name_str) ValkeyModule_FreeString(NULL, engine_name_str);
-    ValkeyModule_RetainString(NULL, val);
-    engine_name_str = val;
-    engine_name_cstr = ValkeyModule_StringPtrLen(val, NULL);
+
+    size_t len;
+    const char *orig = ValkeyModule_StringPtrLen(val, &len);
+
+    char *copy = ValkeyModule_Alloc(len + 1);
+    memcpy(copy, orig, len);
+    copy[len] = '\0';
+
+    for (int i = 0; i < engine_names_count; i++) {
+        ValkeyModule_FreeString(NULL, engine_names[i]);
+        engine_names[i] = NULL;
+        engine_names_cstr[i] = NULL;
+    }
+    engine_names_count = 0;
+
+    char *saveptr = NULL;
+    char *token = strtok_r(copy, ",", &saveptr);
+    while (token != NULL && engine_names_count < MAX_ENGINE_NAMES) {
+        while (*token == ' ' || *token == '\t') token++;
+        char *end = token + strlen(token) - 1;
+        while (end > token && (*end == ' ' || *end == '\t')) end--;
+        end[1] = '\0';
+
+        if (strlen(token) > 0) {
+            ValkeyModuleString *name_str = ValkeyModule_CreateString(NULL, token, strlen(token));
+            engine_names[engine_names_count] = name_str;
+            engine_names_cstr[engine_names_count] = ValkeyModule_StringPtrLen(name_str, NULL);
+            engine_names_count++;
+        }
+        token = strtok_r(NULL, ",", &saveptr);
+    }
+
+    ValkeyModule_Free(copy);
     return VALKEYMODULE_OK;
 }
 
@@ -923,15 +954,22 @@ int ValkeyModule_OnLoad(ValkeyModuleCtx *ctx,
 
     engine_ctx = createEngineContext(ctx);
 
-    if (!engine_name_str) {
-        engine_name_str = ValkeyModule_CreateString(NULL, DEFAULT_ENGINE_NAME, strlen(DEFAULT_ENGINE_NAME));
-        engine_name_cstr = ValkeyModule_StringPtrLen(engine_name_str, NULL);
+    if (engine_names_count == 0) {
+        engine_names[0] = ValkeyModule_CreateString(NULL, DEFAULT_ENGINE_NAME, strlen(DEFAULT_ENGINE_NAME));
+        engine_names_cstr[0] = ValkeyModule_StringPtrLen(engine_names[0], NULL);
+        engine_names_count = 1;
     }
 
     if (ValkeyModule_LoadConfigs(ctx) == VALKEYMODULE_ERR) {
         ValkeyModule_Log(ctx, "warning", "Failed to load LuaJIT module configs");
         destroyEngineContext(engine_ctx);
         engine_ctx = NULL;
+        for (int i = 0; i < engine_names_count; i++) {
+            ValkeyModule_FreeString(NULL, engine_names[i]);
+            engine_names[i] = NULL;
+            engine_names_cstr[i] = NULL;
+        }
+        engine_names_count = 0;
         return VALKEYMODULE_ERR;
     }
 
@@ -956,41 +994,56 @@ int ValkeyModule_OnLoad(ValkeyModuleCtx *ctx,
         .debugger_end = luajitEngineDebuggerEnd,
     };
 
-    int result = ValkeyModule_RegisterScriptingEngine(ctx,
-                                                      engine_name_cstr,
-                                                      engine_ctx,
-                                                      &methods);
+    for (int i = 0; i < engine_names_count; i++) {
+        int result = ValkeyModule_RegisterScriptingEngine(ctx,
+                                                          engine_names_cstr[i],
+                                                          engine_ctx,
+                                                          &methods);
 
-    if (result == VALKEYMODULE_ERR) {
-        ValkeyModule_Log(ctx, "warning", "Failed to register '%s' scripting engine", engine_name_cstr);
-        destroyEngineContext(engine_ctx);
-        engine_ctx = NULL;
-        return VALKEYMODULE_ERR;
+        if (result == VALKEYMODULE_ERR) {
+            ValkeyModule_Log(ctx, "warning", "Failed to register '%s' scripting engine", engine_names_cstr[i]);
+            for (int j = 0; j < i; j++) {
+                ValkeyModule_UnregisterScriptingEngine(ctx, engine_names_cstr[j]);
+            }
+            destroyEngineContext(engine_ctx);
+            engine_ctx = NULL;
+            return VALKEYMODULE_ERR;
+        }
     }
 
     engine_ctx->lua_enable_insecure_api = isLuaInsecureAPIEnabled(ctx);
 
-    ValkeyModule_Log(ctx, "notice",
-                     "LuaJIT scripting engine registered as '%s' (per-user isolation)",
-                     engine_name_cstr);
+    if (engine_names_count == 1) {
+        ValkeyModule_Log(ctx, "notice",
+                         "LuaJIT scripting engine registered as '%s' (per-user isolation)",
+                         engine_names_cstr[0]);
+    } else {
+        for (int i = 0; i < engine_names_count; i++) {
+            ValkeyModule_Log(ctx, "notice",
+                             "LuaJIT scripting engine registered as '%s' (per-user isolation)",
+                             engine_names_cstr[i]);
+        }
+    }
 
     return VALKEYMODULE_OK;
 }
 
 int ValkeyModule_OnUnload(ValkeyModuleCtx *ctx) {
-    if (ValkeyModule_UnregisterScriptingEngine(ctx, engine_name_cstr) != VALKEYMODULE_OK) {
-        ValkeyModule_Log(ctx, "error", "Failed to unregister LuaJIT engine");
-        return VALKEYMODULE_ERR;
+    for (int i = 0; i < engine_names_count; i++) {
+        if (ValkeyModule_UnregisterScriptingEngine(ctx, engine_names_cstr[i]) != VALKEYMODULE_OK) {
+            ValkeyModule_Log(ctx, "error", "Failed to unregister LuaJIT engine '%s'", engine_names_cstr[i]);
+        }
     }
 
     destroyEngineContext(engine_ctx);
     engine_ctx = NULL;
 
-    if (engine_name_str) {
-        ValkeyModule_FreeString(NULL, engine_name_str);
-        engine_name_str = NULL;
-        engine_name_cstr = NULL;
+    for (int i = 0; i < engine_names_count; i++) {
+        ValkeyModule_FreeString(NULL, engine_names[i]);
+        engine_names[i] = NULL;
+        engine_names_cstr[i] = NULL;
     }
+    engine_names_count = 0;
 
     ValkeyModule_Log(ctx, "notice", "LuaJIT scripting engine unloaded");
 
