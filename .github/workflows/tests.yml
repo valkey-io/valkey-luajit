@@ -9,7 +9,11 @@ on:
 
 jobs:
   tests:
-    name: tests
+    name: ${{ matrix.server_version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        server_version: ["unstable", "9.1"]
     runs-on: ubuntu-24.04
     steps:
       - name: Check out code
@@ -21,7 +25,12 @@ jobs:
       - name: Get deps
         run: sudo apt-get install pkg-config tcl8.6 tclx cmake libssl-dev
 
+      - name: Clean
+        run: ./build.sh --clean
+
       - name: Build
+        env:
+          SERVER_VERSION: ${{ matrix.server_version }}
         run: ./build.sh --with-tests
 
       - name: Run tests

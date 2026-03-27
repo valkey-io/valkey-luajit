@@ -42,7 +42,7 @@ EXTRA_SKIP_ARGS=(
     "--skiptest" "Test dofile are not available"
     "--skiptest" "Test print are not available"
     "--skiptest" "LUA test pcall with error"
-    "--skiptest" "Dynamic reset of lua engine with insecure API config change"
+    "--skiptest" "/Dynamic reset of lua engine with insecure API config change"
     "--skiptest" "LIBRARIES - math.random from function load"
     "--skiptest" "LIBRARIES - redis.call from function load"
     "--skiptest" "LIBRARIES - redis.setresp from function load"
