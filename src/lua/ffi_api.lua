@@ -355,8 +355,8 @@ function VKM.get_cluster_size()
     return tonumber(C.ValkeyModule_GetClusterSize())
 end
 
-function VKM.send_cluster_message(ctx, target_id, type, msg)
-    return C.ValkeyModule_SendClusterMessage(ctx, target_id, type, msg, #msg)
+function VKM.send_cluster_message(ctx, target_id, msg_type, msg)
+    return C.ValkeyModule_SendClusterMessage(ctx, target_id, msg_type, msg, #msg)
 end
 
 function VKM.get_cluster_node_info(ctx, id)
@@ -1387,13 +1387,13 @@ function VKM.add_acl_category(ctx, name)
     return C.ValkeyModule_AddACLCategory(ctx, name)
 end
 
-function VKM.notify_keyspace_event(ctx, type, event, key)
+function VKM.notify_keyspace_event(ctx, event_type, event, key)
     if type(key) == "string" then
         local rms = C.ValkeyModule_CreateString(ctx, key, #key)
-        C.ValkeyModule_NotifyKeyspaceEvent(ctx, type, event, rms)
+        C.ValkeyModule_NotifyKeyspaceEvent(ctx, event_type, event, rms)
         C.ValkeyModule_FreeString(ctx, rms)
     else
-        C.ValkeyModule_NotifyKeyspaceEvent(ctx, type, event, key)
+        C.ValkeyModule_NotifyKeyspaceEvent(ctx, event_type, event, key)
     end
 end
 
