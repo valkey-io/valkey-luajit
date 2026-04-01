@@ -207,7 +207,8 @@ function VKM.ctx()
     return ffi.cast("ValkeyModuleCtx *", ud)
 end
 
-function VKM.reply_with_string(ctx, str)
+function VKM.reply_with_string(str)
+    local ctx = VKM.ctx()
     if type(str) == "string" then
         return C.ValkeyModule_ReplyWithStringBuffer(ctx, str, #str)
     else
@@ -215,59 +216,73 @@ function VKM.reply_with_string(ctx, str)
     end
 end
 
-function VKM.reply_with_longlong(ctx, n)
+function VKM.reply_with_longlong(n)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithLongLong(ctx, n)
 end
 
-function VKM.reply_with_error(ctx, msg)
+function VKM.reply_with_error(msg)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithError(ctx, msg)
 end
 
-function VKM.reply_with_cstring(ctx, str)
+function VKM.reply_with_cstring(str)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithCString(ctx, str)
 end
 
-function VKM.reply_with_empty_string(ctx)
+function VKM.reply_with_empty_string()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithEmptyString(ctx)
 end
 
-function VKM.reply_with_empty_array(ctx)
+function VKM.reply_with_empty_array()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithEmptyArray(ctx)
 end
 
-function VKM.reply_with_null_array(ctx)
+function VKM.reply_with_null_array()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithNullArray(ctx)
 end
 
-function VKM.reply_with_verbatim_string(ctx, str)
+function VKM.reply_with_verbatim_string(str)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithVerbatimString(ctx, str, #str)
 end
 
-function VKM.reply_with_longdouble(ctx, ld)
+function VKM.reply_with_longdouble(ld)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithLongDouble(ctx, ld)
 end
 
-function VKM.reply_with_attribute(ctx, len)
+function VKM.reply_with_attribute(len)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithAttribute(ctx, len)
 end
 
-function VKM.reply_set_attribute_length(ctx, len)
+function VKM.reply_set_attribute_length(len)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplySetAttributeLength(ctx, len)
 end
 
-function VKM.reply_set_push_length(ctx, len)
+function VKM.reply_set_push_length(len)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplySetPushLength(ctx, len)
 end
 
-function VKM.reply_with_custom_error(ctx, update_error_stats, fmt, ...)
+function VKM.reply_with_custom_error(update_error_stats, fmt, ...)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_ReplyWithCustomErrorFormat(ctx, update_error_stats and 1 or 0, fmt, ...)
 end
 
-function VKM.log(ctx, level, msg)
+function VKM.log(level, msg)
+    local ctx = VKM.ctx()
     C.ValkeyModule_Log(ctx, level, "%s", msg)
 end
 
-function VKM.db_size(ctx)
+function VKM.db_size()
+    local ctx = VKM.ctx()
     return tonumber(C.ValkeyModule_DbSize(ctx))
 end
 
@@ -293,7 +308,8 @@ function VKM.reset_dataset(restart_aof, async)
     C.ValkeyModule_ResetDataset(restart_aof and 1 or 0, async and 1 or 0)
 end
 
-function VKM.publish_message(ctx, channel, message)
+function VKM.publish_message(channel, message)
+    local ctx = VKM.ctx()
     local channel_str, message_str
     local free_channel, free_message = false, false
 
@@ -319,7 +335,8 @@ function VKM.publish_message(ctx, channel, message)
     return tonumber(result)
 end
 
-function VKM.publish_message_shard(ctx, channel, message)
+function VKM.publish_message_shard(channel, message)
+    local ctx = VKM.ctx()
     local channel_str, message_str
     local free_channel, free_message = false, false
 
@@ -355,11 +372,13 @@ function VKM.get_cluster_size()
     return tonumber(C.ValkeyModule_GetClusterSize())
 end
 
-function VKM.send_cluster_message(ctx, target_id, msg_type, msg)
+function VKM.send_cluster_message(target_id, msg_type, msg)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_SendClusterMessage(ctx, target_id, msg_type, msg, #msg)
 end
 
-function VKM.get_cluster_node_info(ctx, id)
+function VKM.get_cluster_node_info(id)
+    local ctx = VKM.ctx()
     local ip = ffi.new("char[46]")
     local primary_id = ffi.new("char[?]", VKM.NODE_ID_LEN + 1)
     local port = ffi.new("int[1]")
@@ -377,7 +396,8 @@ function VKM.get_cluster_node_info(ctx, id)
     }
 end
 
-function VKM.get_cluster_node_info_for_client(ctx, client_id, node_id)
+function VKM.get_cluster_node_info_for_client(client_id, node_id)
+    local ctx = VKM.ctx()
     local ip = ffi.new("char[46]")
     local primary_id = ffi.new("char[?]", VKM.NODE_ID_LEN + 1)
     local port = ffi.new("int[1]")
@@ -395,7 +415,8 @@ function VKM.get_cluster_node_info_for_client(ctx, client_id, node_id)
     }
 end
 
-function VKM.get_cluster_nodes_list(ctx)
+function VKM.get_cluster_nodes_list()
+    local ctx = VKM.ctx()
     local numnodes = ffi.new("size_t[1]")
     local ids = C.ValkeyModule_GetClusterNodesList(ctx, numnodes)
     if ids == nil then
@@ -409,7 +430,8 @@ function VKM.get_cluster_nodes_list(ctx)
     return result
 end
 
-function VKM.set_cluster_flags(ctx, flags)
+function VKM.set_cluster_flags(flags)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_SetClusterFlags(ctx, flags)
 end
 
@@ -427,15 +449,17 @@ function VKM.cluster_canonical_key_name_in_slot(slot)
     return ffi.string(ptr)
 end
 
-function VKM.get_client_id(ctx)
+function VKM.get_client_id()
+    local ctx = VKM.ctx()
     return tonumber(C.ValkeyModule_GetClientId(ctx))
 end
 
-function VKM.must_obey_client(ctx)
+function VKM.must_obey_client()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_MustObeyClient(ctx)
 end
 
-function VKM.get_client_info_by_id(ctx, id)
+function VKM.get_client_info_by_id(id)
     local ci = ffi.new("ValkeyModuleClientInfo[1]")
     ci[0].version = 1
     local rc = C.ValkeyModule_GetClientInfoById(ci, id)
@@ -451,7 +475,8 @@ function VKM.get_client_info_by_id(ctx, id)
     }
 end
 
-function VKM.get_client_name_by_id(ctx, id)
+function VKM.get_client_name_by_id(id)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetClientNameById(ctx, id)
 end
 
@@ -468,15 +493,18 @@ function VKM.set_client_name_by_id(id, name)
     end
 end
 
-function VKM.get_client_username_by_id(ctx, id)
+function VKM.get_client_username_by_id(id)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetClientUserNameById(ctx, id)
 end
 
-function VKM.get_client_certificate(ctx, id)
+function VKM.get_client_certificate(id)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetClientCertificate(ctx, id)
 end
 
-function VKM.redact_client_command_argument(ctx, pos)
+function VKM.redact_client_command_argument(pos)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_RedactClientCommandArgument(ctx, pos)
 end
 
@@ -542,11 +570,13 @@ function VKM.callreply_promise_abort(reply)
     return rc, private_data_ptr[0]
 end
 
-function VKM.create_string_from_call_reply(ctx, reply)
+function VKM.create_string_from_call_reply(reply)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringFromCallReply(ctx, reply)
 end
 
-function VKM.open_key(ctx, name, mode)
+function VKM.open_key(name, mode)
+    local ctx = VKM.ctx()
     if type(name) == "string" then
         local rms = C.ValkeyModule_CreateString(ctx, name, #name)
         local key = C.ValkeyModule_OpenKey(ctx, rms, mode)
@@ -557,7 +587,8 @@ function VKM.open_key(ctx, name, mode)
     end
 end
 
-function VKM.key_exists(ctx, name)
+function VKM.key_exists(name)
+    local ctx = VKM.ctx()
     if type(name) == "string" then
         local rms = C.ValkeyModule_CreateString(ctx, name, #name)
         local exists = C.ValkeyModule_KeyExists(ctx, rms)
@@ -572,7 +603,8 @@ function VKM.get_open_key_modes_all()
     return C.ValkeyModule_GetOpenKeyModesAll()
 end
 
-function VKM.signal_modified_key(ctx, keyname)
+function VKM.signal_modified_key(keyname)
+    local ctx = VKM.ctx()
     if type(keyname) == "string" then
         local rms = C.ValkeyModule_CreateString(ctx, keyname, #keyname)
         local rc = C.ValkeyModule_SignalModifiedKey(ctx, rms)
@@ -583,23 +615,28 @@ function VKM.signal_modified_key(ctx, keyname)
     end
 end
 
-function VKM.create_string(ctx, str)
+function VKM.create_string(str)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateString(ctx, str, #str)
 end
 
-function VKM.create_string_from_ull(ctx, ull)
+function VKM.create_string_from_ull(ull)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringFromULongLong(ctx, ull)
 end
 
-function VKM.create_string_from_ld(ctx, ld, humanfriendly)
+function VKM.create_string_from_ld(ld, humanfriendly)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringFromLongDouble(ctx, ld, humanfriendly and 1 or 0)
 end
 
-function VKM.create_string_copy(ctx, str)
+function VKM.create_string_copy(str)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringFromString(ctx, str)
 end
 
-function VKM.create_string_from_streamid(ctx, id)
+function VKM.create_string_from_streamid(id)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringFromStreamID(ctx, id)
 end
 
@@ -657,13 +694,7 @@ function VKM.string_to_ulonglong(str)
     return nil, VKM.ERR
 end
 
-function VKM.string_append_buffer(ctx, str, buf)
-    return C.ValkeyModule_StringAppendBuffer(ctx, str, buf, #buf)
-end
 
-function VKM.retain_string(ctx, str)
-    return C.ValkeyModule_RetainString(ctx, str)
-end
 
 function VKM.hash_set_string_ref(key, field, buf, len)
     return C.ValkeyModule_HashSetStringRef(key, field, buf, len)
@@ -682,28 +713,31 @@ function VKM.unlink_key(key)
 end
 
 function VKM.zset_first_in_lex_range(key, min, max)
-    local min_str = type(min) == "string" and VKM.create_string(VKM.ctx(), min) or min
-    local max_str = type(max) == "string" and VKM.create_string(VKM.ctx(), max) or max
+    local ctx = VKM.ctx()
+    local min_str = type(min) == "string" and VKM.create_string(min) or min
+    local max_str = type(max) == "string" and VKM.create_string(max) or max
     local rc = C.ValkeyModule_ZsetFirstInLexRange(key, min_str, max_str)
-    if type(min) == "string" then C.ValkeyModule_FreeString(VKM.ctx(), min_str) end
-    if type(max) == "string" and max ~= min then C.ValkeyModule_FreeString(VKM.ctx(), max_str) end
+    if type(min) == "string" then C.ValkeyModule_FreeString(ctx, min_str) end
+    if type(max) == "string" and max ~= min then C.ValkeyModule_FreeString(ctx, max_str) end
     return rc
 end
 
 function VKM.zset_last_in_lex_range(key, min, max)
-    local min_str = type(min) == "string" and VKM.create_string(VKM.ctx(), min) or min
-    local max_str = type(max) == "string" and VKM.create_string(VKM.ctx(), max) or max
+    local ctx = VKM.ctx()
+    local min_str = type(min) == "string" and VKM.create_string(min) or min
+    local max_str = type(max) == "string" and VKM.create_string(max) or max
     local rc = C.ValkeyModule_ZsetLastInLexRange(key, min_str, max_str)
-    if type(min) == "string" then C.ValkeyModule_FreeString(VKM.ctx(), min_str) end
-    if type(max) == "string" and max ~= min then C.ValkeyModule_FreeString(VKM.ctx(), max_str) end
+    if type(min) == "string" then C.ValkeyModule_FreeString(ctx, min_str) end
+    if type(max) == "string" and max ~= min then C.ValkeyModule_FreeString(ctx, max_str) end
     return rc
 end
 
 function VKM.zset_score(key, ele)
-    local ele_str = type(ele) == "string" and VKM.create_string(VKM.ctx(), ele) or ele
+    local ctx = VKM.ctx()
+    local ele_str = type(ele) == "string" and VKM.create_string(ele) or ele
     local out = ffi.new("double[1]")
     local rc = C.ValkeyModule_ZsetScore(key, ele_str, out)
-    if type(ele) == "string" then C.ValkeyModule_FreeString(VKM.ctx(), ele_str) end
+    if type(ele) == "string" then C.ValkeyModule_FreeString(ctx, ele_str) end
     if rc == VKM.OK then
         return out[0], VKM.OK
     end
@@ -711,19 +745,21 @@ function VKM.zset_score(key, ele)
 end
 
 function VKM.zset_remove(key, ele)
-    local ele_str = type(ele) == "string" and VKM.create_string(VKM.ctx(), ele) or ele
+    local ctx = VKM.ctx()
+    local ele_str = type(ele) == "string" and VKM.create_string(ele) or ele
     local deleted = ffi.new("int[1]")
     local rc = C.ValkeyModule_ZsetRem(key, ele_str, deleted)
-    if type(ele) == "string" then C.ValkeyModule_FreeString(VKM.ctx(), ele_str) end
+    if type(ele) == "string" then C.ValkeyModule_FreeString(ctx, ele_str) end
     return rc, deleted[0]
 end
 
 function VKM.zset_incrby(key, score, ele)
-    local ele_str = type(ele) == "string" and VKM.create_string(VKM.ctx(), ele) or ele
+    local ctx = VKM.ctx()
+    local ele_str = type(ele) == "string" and VKM.create_string(ele) or ele
     local flags = ffi.new("int[1]")
     local newscore = ffi.new("double[1]")
     local rc = C.ValkeyModule_ZsetIncrby(key, score, ele_str, flags, newscore)
-    if type(ele) == "string" then C.ValkeyModule_FreeString(VKM.ctx(), ele_str) end
+    if type(ele) == "string" then C.ValkeyModule_FreeString(ctx, ele_str) end
     if rc == VKM.OK then
         return newscore[0], VKM.OK, flags[0]
     end
@@ -752,7 +788,7 @@ function VKM.stream_add(key, flags, id, fields)
     local ctx = VKM.ctx()
 
     for i = 0, field_count * 2 - 1 do
-        local str = type(fields[i+1]) == "string" and VKM.create_string(ctx, fields[i+1]) or fields[i+1]
+        local str = type(fields[i+1]) == "string" and VKM.create_string(fields[i+1]) or fields[i+1]
         argv_ptr[i] = str
     end
 
@@ -823,7 +859,8 @@ function VKM.stream_trim_by_id(key, flags, id)
     return C.ValkeyModule_StreamTrimByID(key, flags or 0, sid)
 end
 
-function VKM.hold_string(ctx, str)
+function VKM.hold_string(str)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_HoldString(ctx, str)
 end
 
@@ -839,15 +876,18 @@ function VKM.get_context_flags_all()
     return C.ValkeyModule_GetContextFlagsAll()
 end
 
-function VKM.get_context_flags(ctx)
+function VKM.get_context_flags()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetContextFlags(ctx)
 end
 
-function VKM.get_selected_db(ctx)
+function VKM.get_selected_db()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetSelectedDb(ctx)
 end
 
-function VKM.select_db(ctx, dbid)
+function VKM.select_db(dbid)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_SelectDb(ctx, dbid)
 end
 
@@ -928,7 +968,8 @@ function VKM.avoid_replica_traffic()
     return C.ValkeyModule_AvoidReplicaTraffic()
 end
 
-function VKM.yield(ctx, flags, busy_reply)
+function VKM.yield(flags, busy_reply)
+    local ctx = VKM.ctx()
     local reply = busy_reply or "BUSY"
     C.ValkeyModule_Yield(ctx, flags, reply)
 end
@@ -1002,15 +1043,17 @@ function VKM.get_module_user_acl_string(user)
     return C.ValkeyModule_GetModuleUserACLString(user)
 end
 
-function VKM.get_current_user_name(ctx)
+function VKM.get_current_user_name()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetCurrentUserName(ctx)
 end
 
 function VKM.get_module_user_from_username(name)
     if type(name) == "string" then
-        local rms = C.ValkeyModule_CreateString(VKM.ctx(), name, #name)
+        local ctx = VKM.ctx()
+        local rms = C.ValkeyModule_CreateString(ctx, name, #name)
         local user = C.ValkeyModule_GetModuleUserFromUserName(rms)
-        C.ValkeyModule_FreeString(VKM.ctx(), rms)
+        C.ValkeyModule_FreeString(ctx, rms)
         return user
     else
         return C.ValkeyModule_GetModuleUserFromUserName(name)
@@ -1038,15 +1081,18 @@ function VKM.acl_check_permissions(user, argv, argc, dbid)
     return rc, nil
 end
 
-function VKM.acl_add_log_entry(ctx, user, object, reason)
+function VKM.acl_add_log_entry(user, object, reason)
+    local ctx = VKM.ctx()
     C.ValkeyModule_ACLAddLogEntry(ctx, user, object, reason)
 end
 
-function VKM.acl_add_log_entry_by_username(ctx, username, object, reason)
+function VKM.acl_add_log_entry_by_username(username, object, reason)
+    local ctx = VKM.ctx()
     C.ValkeyModule_ACLAddLogEntryByUserName(ctx, username, object, reason)
 end
 
-function VKM.deauthenticate_and_close_client(ctx, client_id)
+function VKM.deauthenticate_and_close_client(client_id)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_DeauthenticateAndCloseClient(ctx, client_id)
 end
 
@@ -1113,11 +1159,13 @@ function VMString_methods:Trim()
     C.ValkeyModule_TrimStringAllocation(self)
 end
 
-function VMString_methods:Copy(ctx)
+function VMString_methods:Copy()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringFromString(ctx, self)
 end
 
-function VMString_methods:Hold(ctx)
+function VMString_methods:Hold()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_HoldString(ctx, self)
 end
 
@@ -1306,35 +1354,43 @@ VKM.CMD_CHANNEL_PUBLISH = 0x00000002
 VKM.CMD_CHANNEL_SUBSCRIBE = 0x00000004
 VKM.CMD_CHANNEL_UNSUBSCRIBE = 0x00000008
 
-function VKM.is_keys_position_request(ctx)
+function VKM.is_keys_position_request()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_IsKeysPositionRequest(ctx)
 end
 
-function VKM.key_at_pos(ctx, pos)
+function VKM.key_at_pos(pos)
+    local ctx = VKM.ctx()
     C.ValkeyModule_KeyAtPos(ctx, pos)
 end
 
-function VKM.key_at_pos_with_flags(ctx, pos, flags)
+function VKM.key_at_pos_with_flags(pos, flags)
+    local ctx = VKM.ctx()
     C.ValkeyModule_KeyAtPosWithFlags(ctx, pos, flags)
 end
 
-function VKM.is_channels_position_request(ctx)
+function VKM.is_channels_position_request()
+    local ctx = VKM.ctx()
     return C.ValkeyModule_IsChannelsPositionRequest(ctx)
 end
 
-function VKM.channel_at_pos_with_flags(ctx, pos, flags)
+function VKM.channel_at_pos_with_flags(pos, flags)
+    local ctx = VKM.ctx()
     C.ValkeyModule_ChannelAtPosWithFlags(ctx, pos, flags)
 end
 
-function VKM.string_append_buffer(ctx, str, buf)
+function VKM.string_append_buffer(str, buf)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_StringAppendBuffer(ctx, str, buf, #buf)
 end
 
-function VKM.retain_string(ctx, str)
+function VKM.retain_string(str)
+    local ctx = VKM.ctx()
     C.ValkeyModule_RetainString(ctx, str)
 end
 
-function VKM.create_string_printf(ctx, fmt, ...)
+function VKM.create_string_printf(fmt, ...)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_CreateStringPrintf(ctx, fmt, ...)
 end
 
@@ -1348,7 +1404,8 @@ VKM.CONFIG_MEMORY = 0x0080
 VKM.CONFIG_BITFLAGS = 0x0100
 VKM.CONFIG_UNSIGNED = 0x0200
 
-function VKM.get_shared_api(ctx, apiname)
+function VKM.get_shared_api(apiname)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_GetSharedAPI(ctx, apiname)
 end
 
@@ -1372,22 +1429,25 @@ function VKM.try_realloc(ptr, bytes)
     return C.ValkeyModule_TryRealloc(ptr, bytes)
 end
 
-function VKM.pool_alloc(ctx, bytes)
+function VKM.pool_alloc(bytes)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_PoolAlloc(ctx, bytes)
 end
 
-function VKM.is_aof_client(ctx)
-    local client_id = VKM.get_client_id(ctx)
+function VKM.is_aof_client()
+    local client_id = VKM.get_client_id()
     return client_id == 0xFFFFFFFFFFFFFFFFULL
 end
 
 VKM.UINT64_MAX = 0xFFFFFFFFFFFFFFFFULL
 
-function VKM.add_acl_category(ctx, name)
+function VKM.add_acl_category(name)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_AddACLCategory(ctx, name)
 end
 
-function VKM.notify_keyspace_event(ctx, event_type, event, key)
+function VKM.notify_keyspace_event(event_type, event, key)
+    local ctx = VKM.ctx()
     if type(key) == "string" then
         local rms = C.ValkeyModule_CreateString(ctx, key, #key)
         C.ValkeyModule_NotifyKeyspaceEvent(ctx, event_type, event, rms)
@@ -1397,7 +1457,8 @@ function VKM.notify_keyspace_event(ctx, event_type, event, key)
     end
 end
 
-function VKM.subscribe_to_keyspace_events(ctx, types)
+function VKM.subscribe_to_keyspace_events(types)
+    local ctx = VKM.ctx()
     return C.ValkeyModule_SubscribeToKeyspaceEvents(ctx, types)
 end
 
@@ -1541,7 +1602,8 @@ function VKM.dict_iterator_reseek(di, key)
     C.ValkeyModule_DictIteratorReseek(di, key)
 end
 
-function VKM.create_string_from_buffer(ctx, ptr, len)
+function VKM.create_string_from_buffer(ptr, len)
+    local ctx = VKM.ctx()
     local buffer = ffi.string(ptr, len)
     return C.ValkeyModule_CreateString(ctx, buffer, len)
 end
