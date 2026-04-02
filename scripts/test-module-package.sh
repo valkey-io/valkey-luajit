@@ -132,9 +132,9 @@ check_entry_point() {
     # Check for ValkeyModule_OnLoad or RedisModule_OnLoad
     # Try multiple tools — symbol visibility varies by strip level and linker version
     local pattern='ValkeyModule_OnLoad|RedisModule_OnLoad'
-    nm -D "$MODULE_PATH" 2>/dev/null | grep -qE "$pattern" && return 0
-    readelf -s --dyn-syms "$MODULE_PATH" 2>/dev/null | grep -qE "$pattern" && return 0
-    objdump -T "$MODULE_PATH" 2>/dev/null | grep -qE "$pattern" && return 0
+    nm -D "$MODULE_PATH" 2>/dev/null | grep -E "$pattern" >/dev/null 2>&1 && return 0
+    readelf -s --dyn-syms "$MODULE_PATH" 2>/dev/null | grep -E "$pattern" >/dev/null 2>&1 && return 0
+    objdump -T "$MODULE_PATH" 2>/dev/null | grep -E "$pattern" >/dev/null 2>&1 && return 0
     # Debug: show what symbols are actually exported
     echo ""
     echo "  DEBUG: Dynamic symbols containing 'Module':"
