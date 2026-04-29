@@ -1,12 +1,6 @@
 {
   "rpm": [
     {
-      "platform_id": "fedora-41",
-      "family": "fedora",
-      "image": "fedora:41",
-      "arch": ["x86_64", "aarch64"]
-    },
-    {
       "platform_id": "fedora-42",
       "family": "fedora",
       "image": "fedora:42",
@@ -81,12 +75,6 @@
   ],
   "deb": [
     {
-      "platform_id": "debian-11",
-      "codename": "bullseye",
-      "image": "debian:11",
-      "arch": ["amd64", "arm64"]
-    },
-    {
       "platform_id": "debian-12",
       "codename": "bookworm",
       "image": "debian:12",
@@ -108,6 +96,12 @@
       "platform_id": "ubuntu-24.04",
       "codename": "noble",
       "image": "ubuntu:24.04",
+      "arch": ["amd64", "arm64"]
+    },
+    {
+      "platform_id": "ubuntu-26.04",
+      "codename": "resolute",
+      "image": "ubuntu:26.04",
       "arch": ["amd64", "arm64"]
     }
   ]
