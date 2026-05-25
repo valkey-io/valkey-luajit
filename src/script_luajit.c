@@ -164,10 +164,11 @@ static void luajitPushErrorBuff(lua_State *lua, const char *err_buffer) {
 
     char *final_msg = NULL;
     /* There are two possible formats for the received `error` string:
-     * 1) "-CODE msg": in this case we remove the leading '-' since we don't store it as part of the lua error format.
-     * 2) "msg": in this case we prepend a generic 'ERR' code since all error statuses need some error code.
+     * 1) "-CODE msg": we remove the leading '-' since we don't store it as part of the lua error format.
+     * 2) "msg":       we prepend a generic 'ERR' code since all error statuses need some error code.
      * We support format (1) so this function can reuse the error messages used in other places.
      * We support format (2) so it'll be easy to pass descriptive errors to this function without worrying about format.
+     * Callers must not embed an error code in the message — pass "-CODE msg" if they want a specific code.
      */
     if (err_buffer[0] == '-') {
         /* derive error code from the message */
@@ -187,7 +188,7 @@ static void luajitPushErrorBuff(lua_State *lua, const char *err_buffer) {
     } else {
         msg = ljm_strcpy(err_buffer);
         msg = ljm_strtrim(msg, "\r\n");
-        final_msg = ljm_asprintf("%s", msg);
+        final_msg = ljm_asprintf("ERR %s", msg);
     }
     /* Trim newline at end of string. If we reuse the ready-made error objects (case 1 above) then we might
      * have a newline that needs to be trimmed. In any case the lua server error table shouldn't end with a newline. */
@@ -397,7 +398,14 @@ static void callReplyToLuaType(lua_State *lua, ValkeyModuleCallReply *reply, int
             serverPanic("lua stack limit reach when parsing server.call reply");
         }
         const char *err = ValkeyModule_CallReplyStringPtr(reply, NULL);
-        luajitPushErrorBuff(lua, err);
+        /* The reply parser strips the leading '-' from the RESP error, so
+         * `err` is of the form "CODE rest" (e.g. "WRONGTYPE Operation..."
+         * or "ERR DB index is out of range"). Re-add the '-' so
+         * luajitPushErrorBuff() goes through its "-CODE msg" branch and
+         * preserves the code instead of double-prefixing with "ERR ". */
+        char *err_with_dash = ljm_asprintf("-%s", err);
+        luajitPushErrorBuff(lua, err_with_dash);
+        ValkeyModule_Free(err_with_dash);
         /* push a field indicate to ignore updating the stats on this error
          * because it was already updated when executing the command. */
         lua_pushstring(lua, "ignore_error_stats_update");
@@ -825,7 +833,7 @@ static ValkeyModuleString **luajitArgsToServerArgv(ValkeyModuleCtx *ctx, lua_Sta
      * integers as well). */
     if (j != *argc) {
         freeLuajitServerArgv(ctx, lua_argv, j);
-        luajitPushError(lua, "ERR Command arguments must be strings or integers");
+        luajitPushError(lua, "Command arguments must be strings or integers");
         return NULL;
     }
 
@@ -849,22 +857,22 @@ static void luajitProcessReplyError(ValkeyModuleCallReply *reply, lua_State *lua
      * with the previous Lua engine that was implemented in Valkey core. */
     if (errno == ESPIPE) {
         if (strncmp(err, "ERR command ", strlen("ERR command ")) == 0) {
-            luajitPushError(lua, "ERR This Valkey command is not allowed from script");
+            luajitPushError(lua, "This Valkey command is not allowed from script");
             push_error = 0;
         }
     } else if (errno == EINVAL) {
         if (strncmp(err, "ERR wrong number of arguments for ", strlen("ERR wrong number of arguments for ")) == 0) {
-            luajitPushError(lua, "ERR Wrong number of args calling command from script");
+            luajitPushError(lua, "Wrong number of args calling command from script");
             push_error = 0;
         }
     } else if (errno == ENOENT) {
         if (strncmp(err, "ERR unknown command '", strlen("ERR unknown command '")) == 0) {
-            luajitPushError(lua, "ERR Unknown command called from script");
+            luajitPushError(lua, "Unknown command called from script");
             push_error = 0;
         }
     } else if (errno == EACCES) {
         if (strncmp(err, "NOPERM ", strlen("NOPERM ")) == 0) {
-            const char *err_prefix = "ERR ACL failure in script: ";
+            const char *err_prefix = "ACL failure in script: ";
             size_t err_len = strlen(err_prefix) + strlen(err + strlen("NOPERM ")) + 1;
             char *err_msg = ValkeyModule_Alloc(err_len * sizeof(char));
             memset(err_msg, 0, err_len);
@@ -877,7 +885,13 @@ static void luajitProcessReplyError(ValkeyModuleCallReply *reply, lua_State *lua
     }
 
     if (push_error) {
-        luajitPushError(lua, err);
+        /* The reply parser strips the leading '-' from the RESP error, so `err`
+         * is of the form "CODE msg" (e.g. "OOM command not allowed..."). Re-add
+         * the '-' so luajitPushErrorBuff() treats the leading word as the error
+         * code and doesn't prepend another "ERR" code. */
+        char *err_with_dash = ljm_asprintf("-%s", err);
+        luajitPushError(lua, err_with_dash);
+        ValkeyModule_Free(err_with_dash);
     }
     /* push a field indicate to ignore updating the stats on this error
      * because it was already updated when executing the command. */
@@ -1150,7 +1164,7 @@ static int luajitRedisAclCheckCmdPermissionsCommand(lua_State *lua) {
 
     if (ValkeyModule_ACLCheckPermissions(user, argv, argc, dbid, NULL) != VALKEYMODULE_OK) {
         if (errno == EINVAL) {
-            luajitPushError(lua, "ERR Invalid command passed to server.acl_check_cmd()");
+            luajitPushError(lua, "Invalid command passed to server.acl_check_cmd()");
             raise_error = 1;
         } else {
             ValkeyModule_Assert(errno == EACCES);
@@ -1514,9 +1528,9 @@ static void luajitMaskCountHook(lua_State *lua, lua_Debug *ar) {
     if (state == VMSE_STATE_KILLED) {
         char *err = NULL;
         if (rctx->type == VMSE_EVAL) {
-            err = "ERR Script killed by user with SCRIPT KILL.";
+            err = "Script killed by user with SCRIPT KILL.";
         } else {
-            err = "ERR Script killed by user with FUNCTION KILL.";
+            err = "Script killed by user with FUNCTION KILL.";
         }
         ValkeyModule_Log(NULL, "notice", "%s", err);
 
