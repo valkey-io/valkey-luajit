@@ -24,5 +24,8 @@ jobs:
     name: Container-based packages
     needs: Get_Version
     uses: ./.github/workflows/packages.yml
+    permissions:
+      contents: write
     with:
       version: ${{ needs.Get_Version.outputs.version }}
+      publish: true
