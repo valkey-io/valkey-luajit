@@ -50,7 +50,8 @@ if [ "$DH_MAJOR" -ge 13 ] 2>/dev/null; then
 fi
 
 # ── Step 3: Update changelog with correct version and codename ──
-dch --newversion "${DEB_VERSION}-1" \
+DISTRO_TAG=$(echo "$PLATFORM_ID" | tr '-' '.')
+dch --newversion "${DEB_VERSION}-1~${DISTRO_TAG}" \
     --distribution "$PLATFORM_CODENAME" \
     --urgency medium \
     "Build for ${PLATFORM_ID} — version ${MODULE_VERSION}"
