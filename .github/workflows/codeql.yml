@@ -27,7 +27,7 @@ jobs:
           sudo apt-get install cmake
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4.37.9
+        uses: github/codeql-action/init@v4.38.0
         with:
           languages: c-cpp
           build-mode: manual
@@ -37,6 +37,6 @@ jobs:
           ./build.sh --release
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v4.37.9
+        uses: github/codeql-action/analyze@v4.38.0
         with:
           category: "/language:c-cpp"
