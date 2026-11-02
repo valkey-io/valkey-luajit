@@ -49,6 +49,10 @@ typedef struct luajitPerUserState {
 } luajitPerUserState;
 
 struct ValkeyModuleDict;
+struct ValkeyModuleString;
+
+#define LUAJIT_ARGV_CACHE_SIZE 32
+#define LUAJIT_ARGV_CACHE_MAX_LEN 64
 
 typedef struct luajitEngineCtx {
     lua_State *compile_lua;
@@ -67,6 +71,11 @@ typedef struct luajitEngineCtx {
 
     int enable_ffi_api;
     int lua_enable_insecure_api;
+
+    struct ValkeyModuleDict *core_commands;
+    struct ValkeyModuleString *argv_cache[LUAJIT_ARGV_CACHE_SIZE];
+    struct ValkeyModuleString *argv_buf[LUAJIT_ARGV_CACHE_SIZE];
+    int argv_cache_busy;
 } luajitEngineCtx;
 
 #endif
