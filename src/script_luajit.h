@@ -31,8 +31,6 @@ typedef struct lua_State lua_State;
 #define LUA_HOOK_CHECK_INTERVAL 100000
 #define LUA_GC_CYCLE_PERIOD 50
 #define LUA_FULL_GC_CYCLE 500
-#define LUA_CMD_OBJCACHE_SIZE 32
-#define LUA_CMD_OBJCACHE_MAX_LEN 64
 
 typedef struct errorInfo {
     char *msg;
@@ -59,12 +57,15 @@ void luajitCallFunction(ValkeyModuleCtx *ctx,
                         size_t nkeys,
                         ValkeyModuleString **args,
                         size_t nargs,
-                        int lua_enable_insecure_api);
+                        luajitEngineCtx *engine_ctx);
 
 void luajitExtractErrorInformation(lua_State *lua, errorInfo *err_info);
 void luajitErrorInformationDiscard(errorInfo *err_info);
 
 unsigned long luajitMemory(lua_State *lua);
+
+struct ValkeyModuleDict *luajitCoreCommandsCreate(ValkeyModuleCtx *ctx);
+void luajitArgvCacheFree(luajitEngineCtx *ectx);
 
 void luajitWatchdogStart(void);
 void luajitWatchdogStop(void);
@@ -80,5 +81,6 @@ void luajitRemoveFunctionFromUserState(lua_State *lua, const char *function_name
 int luajitUserStateRegisterFunction(lua_State *lua);
 
 char *ljm_strcpy(const char *str);
+char *ljm_strncpy(const char *str, size_t len);
 char *ljm_asprintf(char const *fmt, ...);
 #endif

@@ -315,6 +315,11 @@ static luajitEngineCtx *createEngineContext(ValkeyModuleCtx *ctx) {
     engine_ctx->user_states = ValkeyModule_CreateDict(NULL);
     engine_ctx->libraries = ValkeyModule_CreateDict(NULL);
 
+    engine_ctx->core_commands = luajitCoreCommandsCreate(ctx);
+    if (engine_ctx->core_commands == NULL)
+        ValkeyModule_Log(ctx, "warning",
+                         "Could not list the built-in commands; server.call will not reuse arguments");
+
     return engine_ctx;
 }
 
@@ -342,6 +347,7 @@ static void destroyEngineContext(luajitEngineCtx *engine_ctx) {
     ValkeyModule_FreeDict(NULL, engine_ctx->libraries);
 
     if (engine_ctx->compile_lua) lua_close(engine_ctx->compile_lua);
+    luajitArgvCacheFree(engine_ctx);
 
     ValkeyModule_Free(engine_ctx->redis_version);
     ValkeyModule_Free(engine_ctx->server_name);
@@ -558,11 +564,18 @@ static void luajitEngineFunctionCall(
                 }
 
                 if (luajitCompileLibraryInUserState(lua, lib->code, lib->code_len, lib_name) != 0) {
-                    const char *errmsg = lua_tostring(lua, -1);
+                    errorInfo err_info = {0};
+                    const char *errmsg = lua_isstring(lua, -1) ? lua_tostring(lua, -1) : NULL;
+                    if (!errmsg) {
+                        luajitExtractErrorInformation(lua, &err_info);
+                        errmsg = err_info.msg;
+                        if (strncmp(errmsg, "ERR ", 4) == 0) errmsg += 4;
+                    }
                     ValkeyModule_ReplyWithErrorFormat(module_ctx,
                                                       "ERR Error compiling library %s: %s",
                                                       lib_name,
-                                                      errmsg ? errmsg : "unknown error");
+                                                      errmsg);
+                    luajitErrorInformationDiscard(&err_info);
                     lua_pop(lua, 2);
                     return;
                 }
@@ -615,7 +628,7 @@ static void luajitEngineFunctionCall(
                        nkeys,
                        args,
                        nargs,
-                       ctx->lua_enable_insecure_api);
+                       ctx);
 
     if (ctx->enable_ffi_api) {
         lua_pushlightuserdata(lua, NULL);
@@ -974,6 +987,11 @@ int ValkeyModule_OnLoad(ValkeyModuleCtx *ctx,
     if (ValkeyModule_Init(ctx, "luajit", 1, VALKEYMODULE_APIVER_1) == VALKEYMODULE_ERR) {
         return VALKEYMODULE_ERR;
     }
+
+    ValkeyModule_Log(ctx, "notice", "%s",
+                     ValkeyModule_CallArgv
+                         ? "server.call uses ValkeyModule_CallArgv"
+                         : "server.call uses ValkeyModule_Call (ValkeyModule_CallArgv unavailable)");
 
     ValkeyModule_SetModuleOptions(ctx, VALKEYMODULE_OPTIONS_HANDLE_REPL_ASYNC_LOAD |
                                            VALKEYMODULE_OPTIONS_HANDLE_ATOMIC_SLOT_MIGRATION |
