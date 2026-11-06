@@ -68,6 +68,7 @@ typedef struct luajitEngineCtx {
 
     uint64_t next_func_id;
     uint64_t next_lib_id;
+    uint64_t eval_reset_func_id;
 
     int enable_ffi_api;
     int lua_enable_insecure_api;
