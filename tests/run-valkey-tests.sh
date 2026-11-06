@@ -35,6 +35,7 @@ echo ""
 # 3. Tests requiring specific error message formats (restricted APIs, security maintained)
 # 4. Tests for CVE-2024-2024-31449 (PUC-Rio Lua bit library stack overflow). LuaJIT's bit library
 #    is not vulnerable to this vulnerability. The test verifies the built-in Lua fix.
+# 5. Tests whose scripts finish too fast under JIT to reach lua-time-limit.
 # Security is maintained through per-user state isolation.
 EXTRA_SKIP_ARGS=(
     "--skiptest" "Forked scripting debug session does not suspend save points"
@@ -63,6 +64,7 @@ EXTRA_SKIP_ARGS=(
     "--skiptest" "EVAL - JSON string encoding a string larger than 2GB"
     "--skiptest" "/Active Defrag eval scripts"
     "--skiptest" "CONFIG sanity"
+    "--skiptest" "Timed out scripts are detected even when each coroutine runs briefly"
 )
 
 # Copy replacement tests

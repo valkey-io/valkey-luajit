@@ -162,65 +162,40 @@ typedef struct pendingFunc {
 
 static int luajitRegisterFunctionReadNamedArgs(lua_State *lua,
                                                pendingFunc *pf) {
-    char *err = NULL;
+    luajitNamedArgKeys keys;
+    const char *err = luajitReadNamedArgKeys(lua, &keys);
+    if (err) goto error;
 
-    if (!lua_istable(lua, 1)) {
-        err = "calling server.register_function with a single argument is only applicable to Lua table "
-              "(representing named arguments).";
-        goto error;
-    }
-
-    lua_pushnil(lua);
-    while (lua_next(lua, -2)) {
-        if (!lua_isstring(lua, -2)) {
-            err = "named argument key given to server.register_function is not a string";
-            goto error;
-        }
-
-        const char *key = lua_tostring(lua, -2);
-        if (!strcasecmp(key, "function_name")) {
-            if (!(pf->name = luajitGetStringObject(lua, -1))) {
-                err = "function_name argument given to server.register_function must be a string";
-                goto error;
-            }
-        } else if (!strcasecmp(key, "description")) {
-            if (!(pf->desc = luajitGetStringObject(lua, -1))) {
-                err = "description argument given to server.register_function must be a string";
-                goto error;
-            }
-        } else if (!strcasecmp(key, "callback")) {
-            if (!lua_isfunction(lua, -1)) {
-                err = "callback argument given to server.register_function must be a function";
-                goto error;
-            }
-            lua_pop(lua, 1);
-            pf->has_callback = 1;
-            continue;
-        } else if (!strcasecmp(key, "flags")) {
-            if (!lua_istable(lua, -1)) {
-                err = "flags argument to server.register_function must be a table representing function flags";
-                goto error;
-            }
-            if (luajitRegisterFunctionReadFlags(lua, &pf->flags) != C_OK) {
-                err = "unknown flag given";
-                goto error;
-            }
-        } else {
-            err = "unknown argument given to server.register_function";
-            goto error;
-        }
-        lua_pop(lua, 1);
-    }
-
-    if (!pf->name) {
+    if (!keys.function_name) {
         err = "server.register_function must get a function name argument";
         goto error;
     }
-    if (!pf->has_callback) {
+    if (!keys.callback) {
         err = "server.register_function must get a callback argument";
         goto error;
     }
 
+    luajitPushNamedArg(lua, keys.function_name);
+    pf->name = luajitGetStringObject(lua, -1);
+    lua_pop(lua, 1);
+
+    if (keys.description) {
+        luajitPushNamedArg(lua, keys.description);
+        pf->desc = luajitGetStringObject(lua, -1);
+        lua_pop(lua, 1);
+    }
+
+    if (keys.flags) {
+        luajitPushNamedArg(lua, keys.flags);
+        int ret = luajitRegisterFunctionReadFlags(lua, &pf->flags);
+        lua_pop(lua, 1);
+        if (ret != C_OK) {
+            err = "unknown flag given";
+            goto error;
+        }
+    }
+
+    pf->has_callback = 1;
     return C_OK;
 
 error:
