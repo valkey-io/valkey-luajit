@@ -638,6 +638,27 @@ static void luajitEngineFunctionCall(
     lua_pop(lua, 1);
 }
 
+static void luajitForgetInUserState(lua_State *lua, uint64_t func_id, uint64_t lib_id) {
+    lua_pushstring(lua, REGISTRY_FUNC_CACHE_NAME);
+    lua_rawget(lua, LUA_REGISTRYINDEX);
+    if (lua_istable(lua, -1)) {
+        lua_pushlightuserdata(lua, (void *)(uintptr_t)func_id);
+        lua_pushnil(lua);
+        lua_rawset(lua, -3);
+    }
+    lua_pop(lua, 1);
+
+    if (lib_id) {
+        lua_getfield(lua, LUA_REGISTRYINDEX, "__library_compiled");
+        if (lua_istable(lua, -1)) {
+            lua_pushnumber(lua, (lua_Number)lib_id);
+            lua_pushnil(lua);
+            lua_rawset(lua, -3);
+        }
+        lua_pop(lua, 1);
+    }
+}
+
 static void luajitEngineFreeFunction(
     ValkeyModuleCtx *module_ctx,
     ValkeyModuleScriptingEngineCtx *engine_ctx_opaque,
@@ -649,22 +670,23 @@ static void luajitEngineFreeFunction(
     luajitFunction *func = (luajitFunction *)compiled_function->function;
 
     if (func->is_from_eval) {
+        if (func->func_id > ctx->eval_reset_func_id) {
+            ValkeyModuleDictIter *iter = ValkeyModule_DictIteratorStartC(
+                ctx->user_states, "^", NULL, 0);
+
+            char *key;
+            size_t keylen;
+            luajitPerUserState *us;
+            while ((key = ValkeyModule_DictNextC(iter, &keylen, (void **)&us)) != NULL) {
+                if (us->eval_lua) {
+                    luajitForgetInUserState(us->eval_lua, func->func_id, 0);
+                }
+            }
+            ValkeyModule_DictIteratorStop(iter);
+        }
         ValkeyModule_Free(func->source.text);
     } else {
         const char *func_name = func->function_ref.name;
-
-        ValkeyModuleDictIter *iter = ValkeyModule_DictIteratorStartC(
-            ctx->user_states, "^", NULL, 0);
-
-        char *key;
-        size_t keylen;
-        luajitPerUserState *us;
-        while ((key = ValkeyModule_DictNextC(iter, &keylen, (void **)&us)) != NULL) {
-            if (us->function_lua) {
-                luajitRemoveFunctionFromUserState(us->function_lua, func_name);
-            }
-        }
-        ValkeyModule_DictIteratorStop(iter);
 
         int nokey;
         luajitLibrary *lib = ValkeyModule_DictGetC(
@@ -674,8 +696,24 @@ static void luajitEngineFreeFunction(
             &nokey);
 
         if (lib && !nokey) {
-            lib->ref_count--;
-            if (lib->ref_count == 0) {
+            int last = --lib->ref_count == 0;
+
+            ValkeyModuleDictIter *iter = ValkeyModule_DictIteratorStartC(
+                ctx->user_states, "^", NULL, 0);
+
+            char *key;
+            size_t keylen;
+            luajitPerUserState *us;
+            while ((key = ValkeyModule_DictNextC(iter, &keylen, (void **)&us)) != NULL) {
+                if (us->function_lua) {
+                    luajitRemoveFunctionFromUserState(us->function_lua, func_name);
+                    luajitForgetInUserState(us->function_lua, func->func_id,
+                                            last ? lib->lib_id : 0);
+                }
+            }
+            ValkeyModule_DictIteratorStop(iter);
+
+            if (last) {
                 ValkeyModule_Free(lib->code);
                 ValkeyModule_Free(lib->name);
                 ValkeyModule_Free(lib);
@@ -784,6 +822,9 @@ static ValkeyModuleScriptingEngineCallableLazyEnvReset *luajitEngineResetEnv(
     luajitEngineCtx *ctx = (luajitEngineCtx *)engine_ctx_opaque;
     ValkeyModuleScriptingEngineCallableLazyEnvReset *callback = NULL;
 
+    if (type == VMSE_EVAL || type == VMSE_ALL)
+        ctx->eval_reset_func_id = ctx->next_func_id;
+
     if (type == VMSE_FUNCTION || type == VMSE_ALL) {
         ValkeyModuleDictIter *lib_iter = ValkeyModule_DictIteratorStartC(
             ctx->libraries, "^", NULL, 0);
@@ -798,8 +839,6 @@ static ValkeyModuleScriptingEngineCallableLazyEnvReset *luajitEngineResetEnv(
         ValkeyModule_DictIteratorStop(lib_iter);
         ValkeyModule_FreeDict(NULL, ctx->libraries);
         ctx->libraries = ValkeyModule_CreateDict(NULL);
-
-        ctx->next_lib_id = 0;
     }
 
     size_t n = 0;

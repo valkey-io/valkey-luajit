@@ -78,6 +78,16 @@ int luajitCompileLibraryInUserState(lua_State *lua,
 
 void luajitRemoveFunctionFromUserState(lua_State *lua, const char *function_name);
 
+typedef struct luajitNamedArgKeys {
+    const char *function_name;
+    const char *description;
+    const char *callback;
+    const char *flags;
+} luajitNamedArgKeys;
+
+const char *luajitReadNamedArgKeys(lua_State *lua, luajitNamedArgKeys *keys);
+void luajitPushNamedArg(lua_State *lua, const char *key);
+
 int luajitUserStateRegisterFunction(lua_State *lua);
 
 char *ljm_strcpy(const char *str);
