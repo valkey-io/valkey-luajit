@@ -40,6 +40,7 @@ echo ""
 EXTRA_SKIP_ARGS=(
     "--skiptest" "Forked scripting debug session does not suspend save points"
     "--skiptest" "server.log() keeps a multi-line message in one log record"
+    "--skiptest" "server.log() skips a first argument that is not a string"
     "--skiptest" "Test may-replicate commands are rejected in RO scripts"
     "--skiptest" "Test loadfile are not available"
     "--skiptest" "Test dofile are not available"
